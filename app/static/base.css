@@ -1,0 +1,103 @@
+	
+
+:root {
+	--night: #2C2E43;
+	--dark: #595260;
+	--gray: #B2B1B9;
+	--cloud: rgb(235, 229, 229);
+	--accent: #ff6123;
+}
+
+.no-padding {
+	padding: 0 !important;
+}
+
+.main-container {
+	overflow: hidden;
+	height: 100vh;
+}
+
+.left-bar {
+	width: 72px;
+	height: 100vh;
+	background-color: var(--night);
+	overflow: scroll;
+
+	padding: 12px;
+}
+
+.hide-scroll-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.hide-scroll-bar {
+	scrollbar-width: none;  /* Firefox */
+	-ms-overflow-style: none;  /* IE and Edge */
+}
+
+.icon {
+	width: 48px;
+	height: 48px;
+	background-color: var(--accent);
+	border-radius: 6px;
+
+	margin-top: 12px;
+}
+
+.icon:first-child {
+	margin-top: 0px;
+}
+
+
+.chatrooms-list {
+	width: 240px !important;
+	max-width: 240px;
+	background-color: var(--dark);
+	color: var(--cloud);
+	height: 100vh;
+	overflow-y: scroll;
+}
+
+.chatroom {
+	white-space: nowrap;
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+	max-width: 220px;
+}
+
+a > .chatroom, a:hover > .chatroom, a:focus > .chatroom, a:active > .chatroom {
+	color: var(--cloud);
+	text-decoration: none !important; /* no underline */
+}
+
+.messages-list {
+	height: 100vh;
+	width:  calc(100vw - 312px) !important;
+	background-color: var(--gray);
+	padding: 0;
+	overflow-y: scroll;
+
+}
+
+
+.message {
+	margin: 10px;
+
+	padding-left: 24px;
+	padding-right: 48px;
+	
+}
+
+.message .avatar {
+	padding: 0;
+
+	height: 48px;
+	width: 48px;
+	margin: 0;
+
+}
+
+.main-content {
+	background-color: var(--gray);
+	width: calc(100vw - 72px) !important;
+}

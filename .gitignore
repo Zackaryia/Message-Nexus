@@ -1,0 +1,15 @@
+files/*
+media_files/*
+/media_files/*
+messages.db
+__pycache__/
+output_calls.txt
+output_time.txt
+output.dat
+temp/*
+
+test*.py 
+test.py 
+test2.py
+test3.py
+test.txt

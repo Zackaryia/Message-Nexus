@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+ 
+{% block container %}
+
+<div class="col-auto main-content">
+<div>
+	<h1>Import your messages</h1>
+	<h3>Select the location of the imported messages, (choose the zip containing the messages or the folder containing the messages)</h3>
+
+	<form action="/api/submit-import/" method="post">
+		<label for="path">Type/paste out the file or folder location</label>
+		<input type="text" id="path" name="path" required/>
+		<input type="text" name="a"/>
+		<input type="text" name="base"/>
+		<input type="text" name="chatroom"/>
+		<input type="text" name="asd"/>
+		<input type="text" name="ada"/>
+		<input type="text" name="zx"/>
+		<input type="text" name="ff"/>
+		<input type="text" name="aaa"/>
+		<input type="text" name="bc"/>
+		<input type="text" name="df"/>
+		<input input type = "submit" value = "submit">
+	</form>
+
+
+</div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+ 
+{% block container %}
+<div class="col-auto chatrooms-list hide-scroll-bar chatroom">
+	{% for chatroom in chatrooms %}
+		<a href="/chatroom/{{chatroom['service']}}/{{chatroom['chatroom_id']}}">
+			<div class="chatroom">{{chatroom['chatroom_name']}}</div>
+		</a>
+	{% endfor %}
+</div>
+
+<div class="col-auto messages-list" id="messages-list"></div>
+
+<script>
+	
+	var stringToHTML = function (str) {
+		var parser = new DOMParser();	
+		var doc = parser.parseFromString(str, 'text/html');
+		return doc.body.children[0];
+	};
+	
+	document.getElementById("messages-list").onscroll = function() {
+		if (document.getElementById("messages-list").scrollTop <= 1000) {
+			load_messages()
+		}
+	}
+
+	$("#messages-list").ready(function() {
+		
+		load_messages()
+
+	});
+
+	function load_messages() {
+		let scroll_height = document.getElementById("messages-list").scrollHeight-document.getElementById("messages-list").scrollTop
+		oldest_message_id = undefined
+
+		if (document.getElementById("messages-list").firstChild != undefined) {
+			oldest_message_id = document.getElementById("messages-list").firstChild.getAttribute("data-message-id")
+		}
+		
+		params = {}
+
+		if (oldest_message_id != undefined) {
+			params['before_message_id'] = oldest_message_id
+		}
+
+		let messages = JSON.parse($.ajax({
+			url: "/api/messages/{{service | safe}}/{{chatroom_id | safe}}/" + '?' + ( new URLSearchParams( params ) ).toString(),
+			async: false
+		}).responseText)
+		
+
+		for (let index = 0; index < messages.length; index++) {
+			const message = messages[index];
+			
+			new_message = discord_template(message)
+			document.getElementById("messages-list").prepend(stringToHTML(new_message))
+		}
+
+		document.getElementById("messages-list").scrollTo(0,document.getElementById("messages-list").scrollHeight-scroll_height);
+	}
+
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+https://marketplace.visualstudio.com/items?itemName=fabiospampinato.vscode-todo-plus
+
+`Cmd/Ctrl+Enter` Triggers: Toggle Box
+`Alt+Enter` Triggers: Toggle Box
+`Alt+D` Triggers: Toggle Done
+`Alt+C` Triggers: Toggle Cancelled
+`Alt+S` Triggers: Toggle Start
+`Cmd/Ctrl+Shift+A` Triggers: Archive
+
+Tasks:
+	✔ Get infinite scrolling functioning @started(22-02-07 16:47) @done(22-02-07 20:49) @lasted(4h2m53s)
+	✔ Create an importing page @started(22-02-08 11:56) @done(22-02-08 13:13) @lasted(1h17m46s)
+	✔ set up chatroom's to be listed in the webapp @started(22-02-08 18:56) @done(22-02-08 21:58) @lasted(3h2m6s)
+	✔ set up avatars in the backend @done(22-02-09 21:25)
+	✔ hook up avatars to front end @done(22-02-09 21:25)
+	☐ optimize avatars
+	☐ Hook up import functions
+	☐ Also add in the file hash to output file name in files to make files more unique.
+	☐ do Attachments for DCE
+	☐ do avatars for DCE
+	☐ do Attachments for GroupMe
+	☐ do avatars for GroupMe
+	☐ export_ids is a list of ids that a message was exported for
+	☐ Create message or file or other from sqlite query (this may be helpful https://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query) 
+	☐ Compare message with already existing message and adds export id if messages are otherwise the same
+
+
+Longterm Tasks:
+	☐ Logging
+	☐ Check if there is enough space for a download or something before doing it.
+	☐ Error detection and roll back to checkpoints
+	☐ Before checkpoint is created, identify what is about to happen and what the current state of the DB is
+	☐ Use alembic for database versioning & migration
+	☐ make a export tool for discord where each line is the message json data from a discord api call, also make a tool to live export messages from discord as theyre sent or to check periodically for messages
+	☐ optimize json_stream > tokenizer.py
+	☐ Use alembic for database versioning
+
+Overview:
+	- downlaod messages -> import messages into messages.db -> serve messages via flask -> display messages via website
