@@ -1,13 +1,8 @@
 function discord_template(message_dict) {
-	let avatar_url = JSON.parse($.ajax({
-		url: "/api/get-avatar-url/"+message_dict['avatar_uuid']+"/",
-		async: false
-	}).responseText)
-
 	return `<div class="message row discord-message" data-message-id="${message_dict['message_id']}">
 	<div class="col-auto">
 		<div class="avatar">
-			<img src="${avatar_url}" width="48px" height="48px">
+			<img src="/api/get-avatar-url/${message_dict['avatar_uuid']}/"" width="48px" height="48px">
 		</div>
 	</div>
 	<div class="col float-end">

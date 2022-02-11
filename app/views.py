@@ -1,5 +1,5 @@
 from app import app
-from flask import render_template, request, redirect, url_for, flash, make_response, jsonify, request
+from flask import render_template, request, redirect, url_for, flash, make_response, jsonify
 import sqlite3
 
 con = sqlite3.connect('messages.db', check_same_thread=False)
@@ -61,9 +61,9 @@ def chatrooms(service, chatroom_id):
 def return_avatar_url(file_uuid):
 	avatar_data = get_avatar_url(file_uuid)
 	if avatar_data["full_source_file_location_local"] != None:
-		return jsonify(avatar_data['full_source_file_location_local'])
+		return redirect(avatar_data['full_source_file_location_local'])
 	else:
-		return jsonify(avatar_data['source_file_location_remote'])
+		return redirect(avatar_data['source_file_location_remote'])
 
 
 # self.values['service'], self.values['chatroom_type'], self.values['chatroom_id']
