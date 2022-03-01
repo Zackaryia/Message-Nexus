@@ -1,5 +1,8 @@
-from .database import CONFIG, database
+from ._utility import CONFIG
+from ._enum import *
 
-from .chatroom import chatroomClass
-from .message import messageClass
-from .file import fileClass
+
+from .file import File
+#from .avatar import Avatar
+from .message import Message
+from .chatroom import Chatroom

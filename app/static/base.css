@@ -97,6 +97,12 @@ a > .chatroom, a:hover > .chatroom, a:focus > .chatroom, a:active > .chatroom {
 
 }
 
+.avatar > img {
+
+	border-radius: 50%;
+
+}
+
 .main-content {
 	background-color: var(--gray);
 	width: calc(100vw - 72px) !important;

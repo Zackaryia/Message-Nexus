@@ -1,71 +1,50 @@
-from json import dumps, loads
-from parser.helper import *
-from parser._variables import *
-from .file import fileClass
-
-class messageClass:
-	def __init__(
-		self, current_cursor, message_id, chatroom_id, service, chatroom_type, author_id, 
-		timestamp, contents=None, 
-		chatroom_type_raw=None, author_name=None, avatar_uuid=None, sender_type=None, sender_type_raw=None, 
-		attachments_ids=None, favorited_or_pinned=False,  reactions_str=None, reactions_id=None, 
-		embed_id=None, replied_to=None, edited=False, edited_timestamp=None, 
-		edited_timestamp_date=None, source_program=None, 
-		timestamp_date=None, timestamp_pulled=None, timestamp_imported=None, 
-		timestamp_recived=None, other=None, other_parsing_data=None
-	):
-		self.table_name = "messages"
-	
-		args = locals()
-
-		args.pop('self')
-		args.pop('other_parsing_data')
-		
-		self.other_parsing_data = other_parsing_data
-					
-		args.pop('current_cursor')
-
-		self.current_cursor = current_cursor
-		for x in args: # Removes a weird glitch with unicode json
-			if x == None:
-				del args[x]
-				continue
-			
-			args[x] = loads(dumps(args[x]))
-
-		self.values = args
-		
-		self.values['reference_id'] = generate_reference_string(self.values['service'], reference_TYPE.MESSAGE, self.values['message_id'])
-		self.values['chatroom_reference_id'] = generate_reference_string(self.values['service'], self.values['chatroom_type'], self.values['chatroom_id'])
-	
-	def check_exists(self, cursor):
-		cursor.execute(f"""
-			SELECT EXISTS(
-				SELECT 1 
-				FROM {self.table_name} 
-				WHERE service=:service AND chatroom_type=:chatroom_type AND chatroom_id=:chatroom_id AND message_id=:message_id
-			)
-			""", {
-			"service": self.values['service'],
-			"chatroom_type": self.values['chatroom_type'],
-			"chatroom_id": self.values['chatroom_id'],
-			"message_id": self.values['message_id']
-		})
+from sqlalchemy import Column
+import uuid
+from database.file import File
+from database._enum import *
+from database._utility import gen_uuid, Base
+from sqlalchemy.types import Integer, String, Float, Boolean, DateTime, Enum, Text, JSON
 
 
-		if cursor.fetchone()[0]:
-			return True
-		else:
-			return False
+class Message(Base):
+	__tablename__ = 'message'
 
-	def insert_to_db(self, cursor):
-		# Maybe do some smarter version of checking if a message exists in the exact same form to allow for saving edits of a message and other things
-		if not self.check_exists(cursor):
-			keys = ','.join(self.values.keys())
-			values = ':'+',:'.join(self.values.keys())
-			
-			cursor.execute("INSERT INTO messages ("+keys+") VALUES ("+values+")", self.values)
+	id = Column(String, primary_key=True, default=gen_uuid, unique=True, nullable=False)
+
+	message_id = Column(String, unique=True, nullable=False)
+	chatroom_id = Column(String, nullable=False)
+	author_id = Column(String)
+	embed_id = Column(String)
+	reactions_id = Column(String)
+	avatar_id = Column(String, nullable=False)
+
+	attachments_ids = Column(String)
+
+	author_name = Column(String, nullable=False)
+	contents = Column(Text, nullable=False)
+
+	service = Column(Enum(SERVICES), nullable=False) # Determined by helper.py in parser
+	source_program = Column(Enum(SOURCE_PROGRAM)) # Program that retrived the message (_variables.py)
+	replied_to = Column(String)
+
+	chatroom_type = Column(Enum(CHATROOM_TYPE)) # The type of chat room (group dm, dm, channel, etc) Determined by helper.py in parser
+	chatroom_type_raw = Column(String) # If availible the raw format of the sender's type
+
+	#message_type = Column(Enum(message_type)) # Determined by helper.py in parser
+	message_type_raw = Column(String) # Directly from the service
+
+	sender_type = Column(Enum(SENDER_TYPE))
+	sender_type_raw = Column(String)
+	favorited_or_pinned = Column(Boolean)
+	reactions_str = Column(String) # 
+
+	edited_timestamp = Column(DateTime)
+
+	timestamp = Column(DateTime, nullable=False) # Time message was sent
+	timestamp_recived = Column(DateTime) # Time that the message was recived (mainly for SMS type things)
+	timestamp_pulled = Column(DateTime) # Time that the message was downloaded from the server / exported
+	timestamp_imported = Column(DateTime) # Time that the message was inserted into the database
+
+	other = Column(JSON) # Dict of any other data
 
 
-if __name__ == "__main__":
-	a = message(1, 1, 1, 1, 1)

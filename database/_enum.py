@@ -1,38 +1,39 @@
-class reference_TYPE:
+from enum import Enum
+
+class OBJECT_TYPE(Enum):
 	MESSAGE = 0
 	USER = 1
-	CHANNEL = 2
+	CHATROOM = 2
 	EMOJI = 3
 	FILE = 4
-	
-class FILE_TYPE:
-	ATTACHMENT = 0
-	AVATAR = 1
-	ICON = 2
+	AVATAR = 5
+	ATTACHMENT = 6
+	STICKER = 7
+	ICON = 8
 
 
-class FILE_STREAMING_TYPE:
+class FILE_STREAMING_TYPE(Enum):
 	OTHER = -1 # Will error out
 	JSON = 0
 	HTML = 1
 	CSV = 2
 
-class SOURCE_PROGRAM:
+class SOURCE_PROGRAM(Enum):
 	DISCORD_CHAT_EXPORTER = 0 # https://github.com/Tyrrrz/DiscordChatExporter
 	GROUP_ME_DIRECT_DOWNLOAD = 1 # https://web.groupme.com/profile/export
 
-class SENDER_TYPE:
+class SENDER_TYPE(Enum):
 	OTHER = -1
 	HUMAN_USER = 0
 	BOT = 1
 	WEBHOOK = 2
 	SYSTEM = 3
 
-class SERVICES:
+class SERVICES(Enum):
 	DISCORD = 0
 	GROUPE_ME = 1
 
-class CHATROOM_TYPE:
+class CHATROOM_TYPE(Enum):
 	OTHER = "OTHER"
 	TEXT_CHANNEL = "TEXT_CHANNEL" # Text channel within a server
 	GROUP_DM = "GROUP_DM" # A text chatroom within itself
@@ -45,7 +46,7 @@ class CHATROOM_TYPE:
 	]
 
 # https://discord.com/developers/docs/resources/channel#channel-object-channel-types
-class DISCORD_CHATROOM_TYPES:
+class DISCORD_CHATROOM_TYPES(Enum):
 	GUILD_TEXT = 0 # a text channel within a server
 	DM = 1 # a direct message between users
 	GUILD_VOICE = 2 # a voice channel within a server
@@ -85,7 +86,7 @@ DISCORD_DCE_CHAT_TO_DISCORD_CHATROOM_TYPE = {
 }
 
 # https://discord.com/developers/docs/resources/channel#message-object-message-types
-class DISCORD_MESSAGE_KIND:
+class DISCORD_MESSAGE_KIND(Enum):
 	DEFAULT = 0
 	RECIPIENT_ADD = 1
 	RECIPIENT_REMOVE = 2

@@ -1,3 +1,6 @@
+DCE calculates the url hash including ?size=128, so make sure u do that
+
+
 DCE TErminal does not export threads, it can export threads if given the ID of the thread.
 
 

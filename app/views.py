@@ -1,45 +1,28 @@
 from app import app
 from flask import render_template, request, redirect, url_for, flash, make_response, jsonify
-import sqlite3
-
-con = sqlite3.connect('messages.db', check_same_thread=False)
-cur = con.cursor()
-
-
-
-def run_sql(statment, variables={}, limit=-1):
-	cur.execute(statment, variables)
-
-	if limit > 0:
-		return cur.fetchmany(limit)
-
-	return cur.fetchall()
-
-messages_headder = [i[1] for i in run_sql("PRAGMA table_info(messages)")]
-files_headder = [i[1] for i in run_sql("PRAGMA table_info(files)")]
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, Query
+from database import *
+from datetime import datetime
+from database._enum import *
 
 
-def run_sql_prittify(*argv, **kwargs):
-	headers = kwargs.pop('headers')
-	statment_resolved_values = run_sql(*argv, **kwargs)
-	return_list = []
-	for value in statment_resolved_values:
-		return_list.append({headers[i]: value[i] for i in range(0, len(headers), 1)})
 
-	return return_list
+engine = create_engine("sqlite:///"+"home/ze/Desktop/messages-centralizer", echo=True)
 
-def get_avatar_url(file_uuid):
-	x = run_sql_prittify("SELECT * FROM files WHERE file_uuid=:file_uuid", {"file_uuid": file_uuid}, limit=1, headers=files_headder)[0]
-	print(x)
-	return x
+def row2dict(row):
+    d = {}
+    for column in row.__table__.columns:
+        d[column.name] = str(getattr(row, column.name))
 
+    return d
 
 def get_chatrooms():
-	messages_headder = [i[1] for i in run_sql("PRAGMA table_info(chatrooms)")]
+	session = Session(engine)
 
-	chatrooms = run_sql_prittify("SELECT * FROM chatrooms", {}, limit=-1, headers=messages_headder)
-	print(chatrooms)
-	return chatrooms
+	return Query(Chatroom, session).all()
+
+print(get_chatrooms())
 
 @app.route('/')
 def home():
@@ -57,50 +40,49 @@ def chatrooms(service, chatroom_id):
 	
 	return render_template('index.html', chatrooms=get_chatrooms(), service=service, chatroom_id=chatroom_id)
 
-@app.route('/api/get-avatar-url/<file_uuid>/')
-def return_avatar_url(file_uuid):
-	avatar_data = get_avatar_url(file_uuid)
-	if avatar_data["full_source_file_location_local"] != None:
-		return redirect(avatar_data['full_source_file_location_local'])
-	else:
-		return redirect(avatar_data['source_file_location_remote'])
+@app.route('/api/get-avatar-url/<file_id>/')
+def return_avatar_url(file_id):
+	session = Session(engine)
 
+	avatar = Query(File, session).filter(
+		File.id == file_id
+	).first()
+	print(avatar)
+	print(row2dict(avatar))
+	print(avatar.local_location)
+
+	if avatar.file_url != None:
+		return redirect(avatar.file_url)
 
 # self.values['service'], self.values['chatroom_type'], self.values['chatroom_id']
 @app.route('/api/messages/<int:service>/<chatroom_id>/')
 def chatroom_messages(service, chatroom_id):
-	# Get messages
-	print(request.args)
-	
 	if "limit" in request.args:
 		limit = int(request.args['limit'])
 	else:
 		limit = 500
 		
-	args = {
-		"service": service, 
-		"chatroom_id": chatroom_id,
-		**request.args # Can be dangerous
-	}
+	session = Session(engine)
 
-	sql_statment = "SELECT * FROM messages WHERE service=:service AND chatroom_id=:chatroom_id "
+	x = Query(Message, session).filter(
+		Message.service == SERVICES(service).name,
+		Message.chatroom_id == chatroom_id
+	).order_by(Message.timestamp.desc())
 	
-	### Conditions ###
-	if "before_timestamp" in args:
-		sql_statment += " AND timestamp < :before_timestamp " 
-	elif "before_message_id" in args: 
-		# Make sure message id is an integer and it allways incriments up as time goes forward
-		sql_statment += " AND CAST(message_id AS int) < :before_message_id "
+	if "before_timestamp" in request.args:
+		x = x.filter(Message.timestamp < datetime.fromtimestamp(request.args['before_timestamp']))
+	elif "before_message_id" in request.args: 
+		x = x.filter(Message.message_id < request.args['before_message_id'])
 
-	sql_statment += " ORDER BY timestamp DESC "
-	### Conditions ### 
+	x = x.limit(100)
 
-	print(sql_statment, args)
-	messages = run_sql_prittify(sql_statment, args, limit=int(limit), headers=messages_headder)
+	return_dict = []
+	for y in x:
+		return_dict.append(row2dict(y))
 
-	#print(messages)
+	return jsonify(return_dict)
 
-	return jsonify(messages)
+
 
 @app.route('/api/submit-import/', methods = ['POST'])
 def submit_import():
@@ -120,3 +102,4 @@ def get_message_headers():
 @app.route('/static/<path:path>/')
 def send_js(path):
 	return send_from_directory('static', path)
+

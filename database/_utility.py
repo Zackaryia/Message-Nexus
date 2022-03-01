@@ -1,7 +1,20 @@
-from json_stream.base import TransientStreamingJSONList, TransientStreamingJSONObject
 from datetime import datetime
-from parser._variables import *
 import hashlib
+import uuid
+from json_stream.base import TransientStreamingJSONList, TransientStreamingJSONObject
+
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
+
+
+class CONFIG:
+	TEMP_DOWNLOAD_FILE_FOR_INFO = True
+	local_files_dir = '/home/ze/Desktop/messages-centralizer/'
+
+def gen_uuid():
+	return uuid.uuid4().hex
+
 
 def generate_reference_string(service, reference_type, reference_identifyer):
 	"""Ment for mentions in a chatroom or to reference other objects in the SQL table.
@@ -81,5 +94,3 @@ def group_me_sender_type_to_type(group_me_sender_type):
 		return SENDER_TYPE.SYSTEM
 	else:
 		return SENDER_TYPE.OTHER
-		# Log event
-

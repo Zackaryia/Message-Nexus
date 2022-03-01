@@ -3,7 +3,7 @@
 {% block container %}
 <div class="col-auto chatrooms-list hide-scroll-bar chatroom">
 	{% for chatroom in chatrooms %}
-		<a href="/chatroom/{{chatroom['service']}}/{{chatroom['chatroom_id']}}">
+		<a href="/chatroom/{{chatroom['service'].value}}/{{chatroom['chatroom_id']}}">
 			<div class="chatroom">{{chatroom['chatroom_name']}}</div>
 		</a>
 	{% endfor %}

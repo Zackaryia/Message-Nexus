@@ -1,108 +1,131 @@
-from uuid import uuid4
-from json import dumps, loads
-from parser.helper import *
-from parser._variables import *
-import requests, os
-from random import randint
+from sqlalchemy import Column
+from database._utility import hash_obj, gen_uuid, CONFIG, Base
+from database._enum import *
+from sqlalchemy.types import Integer, String, Float, Boolean, DateTime, Enum, Text, JSON
+
+import os, json
 import shutil
-import hashlib
+import requests
 from pathlib import Path
 
 
-class fileClass:
-	def __init__(self, 	service,
-	local_location=None, raw_source_file_location_local=None, full_source_file_location_local=None,
-	source_file_location_remote=None, source_file_name=None, source_file_ext=None, file_type=None,
-	output_file_name=None, author_id=None, chatroom_id=None, reference_id=None, reference_name=None, 
-	url_hash=None, file_hash=None, file_size=None, source_program=None, timestamp=None, timestamp_date=None, 
-	timestamp_pulled=None, timestamp_imported=None, timestamp_recived=None, other=None, file_uuid=None
-):
-		if file_uuid == None:
-			file_uuid = uuid4().hex
+class File(Base):
+	__tablename__ = 'file'
 
-		args = locals()
-		args.pop('self')
+	id = Column(String, primary_key=True, default=gen_uuid, unique=True, nullable=False)
 
-		for x in args: # Removes a weird glitch with unicode json
-			args[x] = loads(dumps(args[x]))
+	parrent_type = Column(Enum(OBJECT_TYPE))
+	parrent_id = Column(String) # Like chatroom id if this is a chatroom avatar
+	name = Column(String) # Sticker name, emoji name, anything other than file name that is relevant
 
-		self.values = args
+	file_type = Column(Enum(OBJECT_TYPE), nullable=False)
 
-		self.table_name = "files"
+	reference_id = Column(String, nullable=False) # From source program attachment id, or avatar id, emoji id, sticker id, or something like that in the reference form
+
+	service = Column(Enum(SERVICES), nullable=False)
+	local_location = Column(String)
+ 
+	source_file_path = Column(String) # The file location that was defined in the origin program
+	full_source_file_path = Column(String) # The full file location from root
+
+	file_url = Column(String)
+	url_hash = Column(String)
+
+	file_name = Column(String)
+	file_ext = Column(String)
+	
+	file_hash = Column(String)
+	file_size = Column(Integer)
+
+	source_program = Column(Enum(SOURCE_PROGRAM), nullable=False)
+
+	timestamp = Column(DateTime) # Time file was sent
+	timestamp_recived = Column(DateTime) # Time that the file was sent (mainly for SMS type things)
+	timestamp_pulled = Column(DateTime) # Time that the file was downloaded from the server / exported
+	timestamp_imported = Column(DateTime) # Time that the message was inserted into the database
+
+
+	other = Column(JSON) 
+
+
+	def insert_url(self, url, file_name, ext, ref_id):
+		# Sets data that can be easily generated
+		ext = ext.split('?')[0] # Removing any extra parts on the ext left by say a ?size=128 in the url for the file
+		self.file_url = url
+		self.url_hash = hash_obj(url.encode('utf-8'))
+		self.source_file_location_remote = url
+		self.file_name = file_name
+		self.file_ext = ext
+		
+		self.reference_id = ref_id
+	
+
+		if self.file_hash == None and CONFIG.TEMP_DOWNLOAD_FILE_FOR_INFO:
+			self.file_hash, self.file_size = get_url_file_hash_and_size(url)
+
+	
+	def insert_file_path(self, full_file_location, source_file_path, ref_id, file_name, ext):
+		self.file_name, self.file_ext = file_name, ext
+		self.reference_id = ref_id
+		self.full_file_location = full_file_location
+		self.source_file_path = source_file_path
+
+		with open(self.full_file_location, 'rb') as file_obj:
+			self.file_hash = hash_obj(file_obj)
+
+		self.local_location = os.path.join(CONFIG.local_files_dir, "files", self.file_hash) + self.file_ext
+
+		print(full_file_location)
+		self.file_size = Path(full_file_location).stat().st_size
+
+		shutil.copy(self.full_file_location, self.local_location)
 
 		
-
-		# Will add the source_file_hash(16chars) if the file gets downloaded and if the 
-
+		self.reference_id = ref_id
 
 
-		self.values = args
-
-	def create(self, search_crieteria, cursor):
-		search_filter = ','.join([f"{key}=:{key}" for value in search_crieteria.keys()])
-
-		cursor.execute(f"SELECT FROM {self.table_name} WHERE "+search_filter, search_crieteria)
-		cursor.fetchone()
-
-	def insert_file(self, database_class, cursor):
-		if 'raw_source_file_location_local' not in self.values:
-			self.values['raw_source_file_location_local'] = None
-		if 'source_file_location_remote' not in self.values:
-			self.values['source_file_location_remote'] = None
-
-		cursor.execute(
-			f"SELECT EXISTS(SELECT 1 FROM {self.table_name} WHERE raw_source_file_location_local=? OR source_file_location_remote=? LIMIT 1)", 
-			(self.values['raw_source_file_location_local'], self.values['source_file_location_remote'])
-		)
-
-		x = cursor.fetchone()[0]
-
-		print(x)
-		if x == 1: # If file exists
-			return
-		
-
-		keys = ','.join(self.values.keys())
-		values = ':'+',:'.join(self.values.keys())
-		print(self.values)
-		cursor.execute(f"INSERT INTO {self.table_name} ("+keys+") VALUES ("+values+")", self.values)
 
 
-	def get_file_or_insert(self, database_class, cursor):
-		if 'raw_source_file_location_local' not in self.values:
-			self.values['raw_source_file_location_local'] = None
-		if 'source_file_location_remote' not in self.values:
-			self.values['source_file_location_remote'] = None
+url_cache = dict()
+def get_url_hash(url):
+	if url not in url_cache:
+		url_cache[url] = hash_obj(url.encode('utf-8'))
 
-		cursor.execute(
-			f"SELECT * FROM {self.table_name} WHERE raw_source_file_location_local=? OR source_file_location_remote=? LIMIT 1", 
-			(self.values['raw_source_file_location_local'], self.values['source_file_location_remote'])
-		)
+	return url_cache[url]
 
-		file_instance = cursor.fetchall()
 
-		print(file_instance)
-		if file_instance == None or file_instance == []: # If file exists
-			self.insert_file(database_class, cursor)
-			return
+url_file_cache = dict()
+def get_url_file_hash_and_size(url, set_none_cache=True):
+	if url not in url_file_cache:
+		response = requests.get(url)
+
+		file_hash, file_size = None, 0
+		if response.ok: # Makes sure that there is something to actually hash or get 
+			file_hash = hash_obj(response.content)
+			file_size = len(response.content)
 		else:
-			file_instance = file_instance[0]
-			file_instance = [file_instance[i] for i in range(len(file_instance))]
-			print(file_instance)
-			cursor.execute(f"PRAGMA table_info({self.table_name})")
+			if set_none_cache: # You may not want to set the value of this location to none but in that case, it will.
+				print(f"URL: {url} could not be retrieved and data was set to None, 0.")
 
-			headers = [i[1] for i in cursor.fetchall()]
+		url_file_cache[url] = (file_hash, file_size)
 
-			print(headers)
-			x = {headers[i]: file_instance[i] for i in range(len(headers))}
-			print("______________#$@$@#$$")
-			print(x)
-			self.values = x
-			print(self.values)
-			return
-
-		
+	return url_file_cache[url]
 
 
-if __name__ == "__main__":
-	a = message(1, 1, 1, 1, 1)
+file_hash_cache = dict()
+def get_file_hash_and_size(file_full_location):
+	if file_full_location not in file_hash_cache:
+		print("a")
+		with open(file_full_location, 'rb') as raw_file:
+			print("b")
+
+			file_hash = hash_obj(raw_file)
+			print(file_hash)
+
+
+		file_size = os.path.getsize(file_full_location)
+
+		file_hash_cache[file_full_location] = (file_hash, file_size)
+	
+	print(file_hash_cache[file_full_location])
+	return file_hash_cache[file_full_location]
