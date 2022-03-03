@@ -10,7 +10,10 @@ Base = declarative_base()
 
 class CONFIG:
 	TEMP_DOWNLOAD_FILE_FOR_INFO = True
-	local_files_dir = '/home/ze/Desktop/messages-centralizer/'
+	DOWNLOAD_FILE_PERM = True
+	data_dir = '/home/ze/Desktop/messages-centralizer/'
+
+	BUF_SIZE = 65536
 
 def gen_uuid():
 	return uuid.uuid4().hex
@@ -37,15 +40,15 @@ def hash_obj(hash_obj):
 	chunk = 0
 
 	while chunk != b'':
-		# read only 8192 bytes at a time
+		# read only BUF_SIZE bytes at a time
 		if isinstance(hash_obj, type(b'')) or isinstance(hash_obj, type('')):
-			if len(hash_obj) > 8192:
-				chunk, hash_obj = hash_obj[0:8192], hash_obj[8192:]
+			if len(hash_obj) > CONFIG.BUF_SIZE:
+				chunk, hash_obj = hash_obj[0:CONFIG.BUF_SIZE], hash_obj[CONFIG.BUF_SIZE:]
 			else:
 				chunk, hash_obj = hash_obj, b''
 				
 		else:
-			chunk = hash_obj.read(8192)
+			chunk = hash_obj.read(CONFIG.BUF_SIZE)
 
 		h.update(chunk)
 

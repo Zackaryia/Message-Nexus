@@ -23,9 +23,9 @@ class File(Base):
 	reference_id = Column(String, nullable=False) # From source program attachment id, or avatar id, emoji id, sticker id, or something like that in the reference form
 
 	service = Column(Enum(SERVICES), nullable=False)
-	local_location = Column(String)
  
 	source_file_path = Column(String) # The file location that was defined in the origin program
+	relative_file_path = Column(String) # The file location relative to the exported file
 	full_source_file_path = Column(String) # The full file location from root
 
 	file_url = Column(String)
@@ -73,7 +73,7 @@ class File(Base):
 		with open(self.full_file_location, 'rb') as file_obj:
 			self.file_hash = hash_obj(file_obj)
 
-		self.local_location = os.path.join(CONFIG.local_files_dir, "files", self.file_hash) + self.file_ext
+		self.local_location = os.path.join(CONFIG.data_dir, "files", self.file_hash) + self.file_ext
 
 		print(full_file_location)
 		self.file_size = Path(full_file_location).stat().st_size
@@ -95,7 +95,7 @@ def get_url_hash(url):
 
 
 url_file_cache = dict()
-def get_url_file_hash_and_size(url, set_none_cache=True):
+def get_url_file_hash_and_size(url, set_none_cache=True, save_file=False, save_file_location=None):
 	if url not in url_file_cache:
 		response = requests.get(url)
 
@@ -103,6 +103,11 @@ def get_url_file_hash_and_size(url, set_none_cache=True):
 		if response.ok: # Makes sure that there is something to actually hash or get 
 			file_hash = hash_obj(response.content)
 			file_size = len(response.content)
+
+			if save_file:
+				with open(save_file_location, "wb") as f:
+					f.write(response.content)
+
 		else:
 			if set_none_cache: # You may not want to set the value of this location to none but in that case, it will.
 				print(f"URL: {url} could not be retrieved and data was set to None, 0.")

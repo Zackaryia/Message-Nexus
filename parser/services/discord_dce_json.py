@@ -26,31 +26,65 @@ logging.warn("test")
 class discord_dce_json(base_service):
 	def __init__(self, file_location):
 		super().__init__(json_stream.load, file_location, ['messages'])
+		self.SERVICE = SERVICES.DISCORD
+		self.SOURCE_PROGRAM = SOURCE_PROGRAM.DISCORD_DCE_JSON
 		# streaming_func
 
 	def get_streaming_func(self, raw_file):
 		return json_stream.load(raw_file)
 
 	def file_handler(self, file_url_loc, file_type, session):
+		FIVE_CHAR_HASH = None
 		name, ext = file_url_loc.split('/')[-1].split('.')
 		ext = ext.split('?')[0]
-		file_url, full_file_local, source_file_path = None, None, None
+		file_url, full_file_location, source_file_path = None, None, None
 
 		if file_url_loc.startswith("https://") or file_url_loc.startswith("http://"):
 			file_url = file_url_loc 
+			referance_id = name
 		else:
-			
-			file_name, ext = name, ext
+			referance_id, FIVE_CHAR_HASH = name.replace("a_", '').split('-')
 			source_file_path = file_url_loc
-			full_file_local = os.path.join(Path(self.file_location).parent.resolve(), file_url_loc)
+			full_file_location = os.path.join(Path(self.file_location).parent.resolve(), file_url_loc)
 
-		
-		
-		return create_find_update_file(session, name, ext, SERVICES.DISCORD, file_type, name, SOURCE_PROGRAM.DISCORD_CHAT_EXPORTER, file_url=file_url, full_file_location=full_file_local, source_file_path=source_file_path)
+
+		file_inst = Query(File, session=session).filter(
+			File.reference_id == referance_id,
+			File.file_type == file_type,
+			File.source_program == self.SOURCE_PROGRAM
+		).first()
+
+		if file_url != None and file_inst == None:
+			url_file_hash, _ = get_url_file_hash_and_size(file_url, save_file=CONFIG.BUF_SIZE)
+
+			file_inst = find_file(session, get_url_hash(file_url), url_file_hash)
+		else:
+			file_hash, _ = get_file_hash_and_size(full_file_location)
+			file_inst = find_file(session, None, file_hash)
+
+		# Make avatar if it was not found
+		if file_inst == None: 
+			file_inst = File(
+				reference_id = referance_id,
+				service = self.SERVICE,
+				file_type = file_type,
+				source_program = self.SOURCE_PROGRAM,
+				timestamp_imported = datetime.now(),
+			)
+			
+		# Update file with new information
+		if file_url != None:
+			file_inst.insert_url(file_url, file_name, ext, referance_id)
+		if full_file_location != None:
+			file_inst.insert_file_path(full_file_location, source_file_path, referance_id, name, ext)
+			
+		file_inst.other[self.SOURCE_PROGRAM.name+"_5_CHAR_HASH"] = FIVE_CHAR_HASH
+
+		return file_inst
 
 	def get_chatroom_instance(self, chatroom_data, session):
-		chatroom = Query(Chatroom, session=session).filter(Chatroom.chatroom_id == chatroom_data['channel']['id'], Chatroom.service == SERVICES.GROUPE_ME).first()
-
+		chatroom = Query(Chatroom, session=session).filter(Chatroom.chatroom_id == chatroom_data['channel']['id'], Chatroom.service == self.SERVICE).first()
+		
 		if chatroom == None:
 			chatroom_avatar = self.file_handler(chatroom_data["guild"]["iconUrl"], OBJECT_TYPE.ICON, session)
 			chatroom_avatar.timestamp_imported = datetime.now()
@@ -60,15 +94,16 @@ class discord_dce_json(base_service):
 			chatroom = Chatroom(
 				avatar_id=chatroom_avatar.reference_id,
 				chatroom_id=chatroom_data['channel']['id'], 
-				service=SERVICES.DISCORD, 
-				source_program=SOURCE_PROGRAM.DISCORD_CHAT_EXPORTER,
+				service=self.SERVICE, 
+				source_program=self.SOURCE_PROGRAM,
 				chatroom_type=chatroom_data['type'],
 				chatroom_type_raw=chatroom_data['raw_type'],
 				chatroom_name=chatroom_data['channel']['name'],
 				description=chatroom_data['channel']['topic'],
 				timestamp_imported=datetime.now()
 			)
-
+			
+			
 			session.add(chatroom)
 		else:
 			pass # Update chatroom to add more data
@@ -124,7 +159,6 @@ class discord_dce_json(base_service):
 		
 		avatar_inst.parrent_type = OBJECT_TYPE.USER
 		avatar_inst.parrent_id = message_data['author']['id']
-		avatar_inst.timestamp_imported = datetime.now()
 
 		session.add(avatar_inst)
 		session.flush()
@@ -136,7 +170,7 @@ class discord_dce_json(base_service):
 		message = Message(
 			message_id=message_data['id'], 
 			chatroom_id=chatroom_data["channel"]["id"],
-			service=SERVICES.DISCORD, 
+			service=self.SERVICE, 
 			chatroom_type=chatroom_data['type'], 
 			author_id=message_data['author']['id'],
 			author_name=author_name,
@@ -147,7 +181,7 @@ class discord_dce_json(base_service):
 			contents=message_data['content'],
 			favorited_or_pinned=message_data['isPinned'],
 			edited_timestamp=epoch_edited_time,
-			source_program=SOURCE_PROGRAM.DISCORD_CHAT_EXPORTER,
+			source_program=self.SOURCE_PROGRAM,
 			timestamp_imported=datetime.now()
 		)
 

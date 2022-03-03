@@ -5,7 +5,7 @@ from database._enum import *
 import hashlib
 from database.file import File, get_url_file_hash_and_size, get_url_hash, get_file_hash_and_size
 from sqlalchemy.orm import Query
-from database._utility import hash_obj
+from database._utility import hash_obj, CONFIG
 import uuid
 import logging
 import os
@@ -41,7 +41,7 @@ def create_find_update_file(session, file_name, ext, service, file_type, referen
 	).first()
 
 	if file_url != None and file_inst == None:
-		url_file_hash, _ = get_url_file_hash_and_size(file_url)
+		url_file_hash, _ = get_url_file_hash_and_size(file_url, save_file=CONFIG.BUF_SIZE)
 
 		file_inst = find_file(session, get_url_hash(file_url), url_file_hash)
 	else:
@@ -54,7 +54,8 @@ def create_find_update_file(session, file_name, ext, service, file_type, referen
 			reference_id = reference_id,
 			service = service,
 			file_type = file_type,
-			source_program = source_program
+			source_program = source_program,
+			timestamp_imported = datetime.now()
 		)
 		
 	# Update file with new information

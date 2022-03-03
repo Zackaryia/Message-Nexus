@@ -13,30 +13,50 @@ class GROUP_ME_FILE_TYPE(Enum):
 	IMAGE = 0
 	VIDEO = 1
 	FILE = 2
+	AVATAR = 3
 
 class group_me_json_export(base_service):
 	def __init__(self, file_location):
-		manifest_data_file_path = os.path.join(Path(self.file_location).parent.resolve(), 'gallery', 'manifest.json')
-		with open(manifest_data_file_path, "r") as manifest_data_file:
-			self.manifest_data = load(manifest_data_file)
+		if os.path.isdir(os.path.join(Path(self.file_location).parent.resolve(), 'gallery')):
+			manifest_data_file_path = os.path.join(Path(self.file_location).parent.resolve(), 'gallery', 'manifest.json')
+			with open(manifest_data_file_path, "r") as manifest_data_file:
+				self.manifest_data = load(manifest_data_file)
+				self.files = os.listdir(os.path.join(self.file_location).parent.resolve(), 'gallery')
 
-		self.files = os.listdir(os.path.join(self.file_location).parent.resolve(), 'gallery')
+		else:
+			self.manifest_data = None
+			self.files = None
+
 
 		super().__init__(json_stream.load, file_location, ['messages'])
 		# streaming_func
 
-	def file_handler(self, file_url_loc, group_me_file_type, file_type, session):
+	def file_handler(self, file_url_loc, group_me_file_type, file_type, session, group_id=None):
 		referance_id = None
+		ext = None
 		if group_me_file_type == GROUP_ME_FILE_TYPE.IMAGE:
 			referance_id = file_url_loc.split['.'][-1]
 			ext = file_url_loc.split['.'][-2]
 		elif group_me_file_type == GROUP_ME_FILE_TYPE.VIDEO:
-			
+			referance_id = file_url_loc.split("/")[-1].split('.')[0]
+			ext = file_url_loc.split("/")[-1].split('.')[-1]
+		elif group_me_file_type == GROUP_ME_FILE_TYPE.FILE:
+			referance_id = file_url_loc
+		elif group_me_file_type == GROUP_ME_FILE_TYPE.AVATAR:
+			referance_id = file_url_loc.split('.')[-2]
+			ext = file_url_loc.split('.')[-3]
 
-	
+			#######################################################
+			# GO TO `group_me_file_dwld.py` FOR HOW TO DWLD FILES #
+			#######################################################
+
+		else:
+			pass
+
+
 		if file_url_loc in self.manifest_data:
-			for file in self.files:
-				if 
+		#	for file in self.files:
+		#		if 
 			
 			file_name, ext = name, ext
 			source_file_path = file_url_loc
@@ -44,7 +64,7 @@ class group_me_json_export(base_service):
 
 		
 		
-		return create_find_update_file(session, name, ext, SERVICES.DISCORD, file_type, name, SOURCE_PROGRAM.DISCORD_CHAT_EXPORTER, file_url=file_url, full_file_location=full_file_local, source_file_path=source_file_path)
+		return create_find_update_file(session, name, ext, SERVICES.DISCORD, file_type, name, SOURCE_PROGRAM.DISCORD_DCE_JSON, file_url=file_url, full_file_location=full_file_local, source_file_path=source_file_path)
 
 	def get_chatroom_instance(self, chatroom_data, session):
 		if "chat" in chatroom_data:
@@ -145,7 +165,7 @@ class group_me_json_export(base_service):
 			contents=message_data['content'],
 			favorited_or_pinned=message_data['isPinned'],
 			edited_timestamp=epoch_edited_time,
-			source_program=SOURCE_PROGRAM.DISCORD_CHAT_EXPORTER,
+			source_program=SOURCE_PROGRAM.DISCORD_DCE_JSON,
 			timestamp_imported=datetime.now()
 		)
 
@@ -212,7 +232,6 @@ class group_me_json_export(base_service):
 			
 			author_name=message_data['name'],
 			timestamp=epoch,
-			timestamp_date=epoch_to_datetime(epoch),
 			contents=message_data['text'],
 			source_program=SOURCE_PROGRAM.GROUP_ME_DIRECT_DOWNLOAD,
 			other=dumps({"group_me_source_guid": message_data['source_guid']})

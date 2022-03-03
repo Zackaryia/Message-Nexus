@@ -19,8 +19,9 @@ class FILE_STREAMING_TYPE(Enum):
 	CSV = 2
 
 class SOURCE_PROGRAM(Enum):
-	DISCORD_CHAT_EXPORTER = 0 # https://github.com/Tyrrrz/DiscordChatExporter
-	GROUP_ME_DIRECT_DOWNLOAD = 1 # https://web.groupme.com/profile/export
+	DISCORD_DCE_JSON = 0 # https://github.com/Tyrrrz/DiscordChatExporter
+	DISCORD_DCE_HTML = 1 # https://github.com/Tyrrrz/DiscordChatExporter
+	GROUP_ME_DIRECT_DOWNLOAD = 2 # https://web.groupme.com/profile/export
 
 class SENDER_TYPE(Enum):
 	OTHER = -1
@@ -34,12 +35,12 @@ class SERVICES(Enum):
 	GROUPE_ME = 1
 
 class CHATROOM_TYPE(Enum):
-	OTHER = "OTHER"
-	TEXT_CHANNEL = "TEXT_CHANNEL" # Text channel within a server
-	GROUP_DM = "GROUP_DM" # A text chatroom within itself
-	DIRECT = "DM" # A 1-1 messaging chatroom
-	VOICE = "VOICE" # A voice chatroom
-	THREAD = "THREAD" # A sub chatroom for a text chatroom
+	OTHER = -1
+	TEXT_CHANNEL = 0 # Text channel within a server
+	GROUP_DM = 1 # A text chatroom within itself
+	DIRECT = 2 # A 1-1 messaging chatroom
+	VOICE = 3 # A voice chatroom
+	THREAD = 4 # A sub chatroom for a text chatroom
 
 	CHATROOM_TYPE_LIST = [
 		OTHER, TEXT_CHANNEL, GROUP_DM, DIRECT, VOICE, THREAD
