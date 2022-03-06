@@ -16,3 +16,4 @@ test.txt
 *.log
 *.db 
 *.db-journal
+keys.json

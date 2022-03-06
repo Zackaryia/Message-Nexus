@@ -43,12 +43,38 @@ class group_me_json_export(base_service):
 		elif group_me_file_type == GROUP_ME_FILE_TYPE.FILE:
 			referance_id = file_url_loc
 		elif group_me_file_type == GROUP_ME_FILE_TYPE.AVATAR:
-			referance_id = file_url_loc.split('.')[-2]
+			file_id = file_url_loc.split('.')[-2]
 			ext = file_url_loc.split('.')[-3]
 
-			#######################################################
-			# GO TO `group_me_file_dwld.py` FOR HOW TO DWLD FILES #
-			#######################################################
+			
+			# ! GET ACCESS TOKEN VIA GROUP ME WEBSITE ! #
+			headers = {
+				'x-access-token': '{access_token}',
+			}
+
+			data = {
+				"file_ids":["{file_id}"]
+			}
+
+			response = requests.post('https://file.groupme.com/v1/{group_id}/fileData', headers=headers, data=data)
+			print(response.ok)
+			print(response.content)
+			print(response.text)
+			print(response.status_code)
+
+			data = {
+				'access_token': '{access_token}',
+				'omit-content-disposition': 'false'
+			}
+
+			response = requests.post('https://file.groupme.com/v1/{group_id}/files/{file_id}', data=data)
+
+			print(response.ok)
+			print(response.content)
+			print(response.text)
+			print(response.status_code)
+
+
 
 		else:
 			pass

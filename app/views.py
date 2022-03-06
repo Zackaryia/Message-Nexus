@@ -8,7 +8,7 @@ from database._enum import *
 
 
 
-engine = create_engine("sqlite:///"+"home/ze/Desktop/messages-centralizer", echo=True)
+engine = create_engine("sqlite:///"+"home/ze/Desktop/Message-Nexus", echo=True)
 
 def row2dict(row):
     d = {}

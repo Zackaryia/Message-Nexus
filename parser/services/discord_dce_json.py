@@ -24,26 +24,33 @@ logging.warn("test")
 
 
 class discord_dce_json(base_service):
-	def __init__(self, file_location):
-		super().__init__(json_stream.load, file_location, ['messages'])
+	def __init__(self, file_location, keys):
+		super().__init__(file_location, keys)
 		self.SERVICE = SERVICES.DISCORD
 		self.SOURCE_PROGRAM = SOURCE_PROGRAM.DISCORD_DCE_JSON
+		self.streaming_func = json_stream.load
 		# streaming_func
 
-	def get_streaming_func(self, raw_file):
-		return json_stream.load(raw_file)
+	def get_streaming_iterable(self, streaming_obj):
+		return streaming_obj['messages']
 
 	def file_handler(self, file_url_loc, file_type, session):
-		FIVE_CHAR_HASH = None
-		name, ext = file_url_loc.split('/')[-1].split('.')
-		ext = ext.split('?')[0]
+		FIVE_CHAR_URL_HASH = None
+
+		file_path = Path(file_url_loc)
+		file_name = str(file_path.name)
+		ext = str(file_path.suffix.split('?')[0])
+
 		file_url, full_file_location, source_file_path = None, None, None
 
 		if file_url_loc.startswith("https://") or file_url_loc.startswith("http://"):
 			file_url = file_url_loc 
-			referance_id = name
+			referance_id = str(Path(file_name).with_suffix(''))
+
 		else:
-			referance_id, FIVE_CHAR_HASH = name.replace("a_", '').split('-')
+			source_file_name = str(Path(file_name.rsplit('-', 1)[0]).with_suffix(ext).name)
+			FIVE_CHAR_URL_HASH = file_name.rsplit('-', 1)[1]
+			referance_id = file_name.rsplit('-', 1)[0]
 			source_file_path = file_url_loc
 			full_file_location = os.path.join(Path(self.file_location).parent.resolve(), file_url_loc)
 
@@ -58,7 +65,7 @@ class discord_dce_json(base_service):
 			url_file_hash, _ = get_url_file_hash_and_size(file_url, save_file=CONFIG.BUF_SIZE)
 
 			file_inst = find_file(session, get_url_hash(file_url), url_file_hash)
-		else:
+		elif full_file_location != None and file_inst == None:
 			file_hash, _ = get_file_hash_and_size(full_file_location)
 			file_inst = find_file(session, None, file_hash)
 
@@ -70,17 +77,22 @@ class discord_dce_json(base_service):
 				file_type = file_type,
 				source_program = self.SOURCE_PROGRAM,
 				timestamp_imported = datetime.now(),
+				other = {}
 			)
 			
 		# Update file with new information
 		if file_url != None:
 			file_inst.insert_url(file_url, file_name, ext, referance_id)
 		if full_file_location != None:
-			file_inst.insert_file_path(full_file_location, source_file_path, referance_id, name, ext)
-			
-		file_inst.other[self.SOURCE_PROGRAM.name+"_5_CHAR_HASH"] = FIVE_CHAR_HASH
+			file_inst.insert_file_path(full_file_location, source_file_path, referance_id, source_file_name, file_name, ext)
+
+		if file_inst.other == None:
+			file_inst.other = {}
+
+		file_inst.other[self.SOURCE_PROGRAM.name+"_5_CHAR_URL_HASH"] = FIVE_CHAR_URL_HASH
 
 		return file_inst
+
 
 	def get_chatroom_instance(self, chatroom_data, session):
 		chatroom = Query(Chatroom, session=session).filter(Chatroom.chatroom_id == chatroom_data['channel']['id'], Chatroom.service == self.SERVICE).first()
@@ -115,8 +127,6 @@ class discord_dce_json(base_service):
 
 
 	def get_chatroom_data(self, streaming_obj):
-		print(streaming_obj)
-
 		chatroom_data = {
 					"guild": combine_items(streaming_obj['guild']),
 					"channel": combine_items(streaming_obj['channel']),

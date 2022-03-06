@@ -5,29 +5,21 @@ from database._enum import *
 from database import *
 from shutil import copyfile
 from sqlalchemy.orm import Session, Query
-
+from database._utility import combine_items
 
 
 class base_service:
-	def __init__(self, streaming_func, file_location, message_index=[]):
-		self.streaming_func = streaming_func
+	def __init__(self, file_location, keys):
 		self.file_location = file_location
-		self.message_index = message_index
+		self.keys = keys
 
-	def return_message_index(self, streaming_obj, message_index):
-		if message_index == None or len(message_index) == 0:
-			return streaming_obj
-		else:
-			index_value = message_index.pop(0)
-			return self.return_message_index(streaming_obj[index_value], message_index)
-
-	def get_streaming_func(self):
+	def get_streaming_iterable(self, streaming_obj):
 		pass
 
 	def parse_message(self, message_raw, chatroom_data, session):
 		pass 
 
-	def get_chatroom_instance(self, streaming_obj, session):
+	def get_chatroom_instance(self, chatroom_data, session):
 		pass
 
 	def get_chatroom_data(self, streaming_obj):
@@ -40,14 +32,13 @@ class base_service:
 
 	def stream_file(self, engine, yield_message=True):
 		with open(self.file_location, 'r') as raw_file:
-			streaming_obj = self.streaming_func(raw_file)
-
 			with Session(engine) as session, session.begin():
+				streaming_obj = self.streaming_func(raw_file)
+
 				chatroom_data = self.get_chatroom_data(streaming_obj)
-				
 				chatroom_instance = self.get_chatroom_instance(chatroom_data, session)
 
-				for message_raw in self.return_message_index(streaming_obj, self.message_index):
+				for message_raw in self.get_streaming_iterable(streaming_obj):
 					message = self.parse_message(message_raw, chatroom_data, session=session)
 
 					if yield_message:

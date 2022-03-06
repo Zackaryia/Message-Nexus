@@ -11,7 +11,7 @@ Base = declarative_base()
 class CONFIG:
 	TEMP_DOWNLOAD_FILE_FOR_INFO = True
 	DOWNLOAD_FILE_PERM = True
-	data_dir = '/home/ze/Desktop/messages-centralizer/'
+	data_dir = '/home/ze/Desktop/Message-Nexus/'
 
 	BUF_SIZE = 65536
 

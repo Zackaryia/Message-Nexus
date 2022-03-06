@@ -31,7 +31,8 @@ class File(Base):
 	file_url = Column(String)
 	url_hash = Column(String)
 
-	file_name = Column(String)
+	source_file_name = Column(String) # The file name according to the service including .png and stuff
+	file_name = Column(String) # The file name according to the exported program
 	file_ext = Column(String)
 	
 	file_hash = Column(String)
@@ -45,7 +46,7 @@ class File(Base):
 	timestamp_imported = Column(DateTime) # Time that the message was inserted into the database
 
 
-	other = Column(JSON) 
+	other = Column(JSON, default={}) 
 
 
 	def insert_url(self, url, file_name, ext, ref_id):
@@ -64,11 +65,12 @@ class File(Base):
 			self.file_hash, self.file_size = get_url_file_hash_and_size(url)
 
 	
-	def insert_file_path(self, full_file_location, source_file_path, ref_id, file_name, ext):
+	def insert_file_path(self, full_file_location, source_file_path, ref_id, source_file_name, file_name, ext):
 		self.file_name, self.file_ext = file_name, ext
 		self.reference_id = ref_id
 		self.full_file_location = full_file_location
 		self.source_file_path = source_file_path
+		self.source_file_name = source_file_name
 
 		with open(self.full_file_location, 'rb') as file_obj:
 			self.file_hash = hash_obj(file_obj)
